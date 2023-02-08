@@ -65,14 +65,14 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
   if systemctl is-active tsb-gui.service &>/dev/null ; then sudo systemctl stop tsb-gui 2>/dev/null && sudo systemctl daemon-reload ; fi
   sudo systemctl enable tsb-gui ;
   sudo systemctl start tsb-gui ;
-  sleep 3
+  sleep 1
 
   envsubst < ./config/vm-gateway-template.service > ./config/vm-gateway.service ;
   sudo cp ./config/vm-gateway.service /etc/systemd/system ;
   if systemctl is-active vm-gateway.service &>/dev/null ; then sudo systemctl stop vm-gateway 2>/dev/null && sudo systemctl daemon-reload ; fi
   sudo systemctl enable vm-gateway ;
   sudo systemctl start vm-gateway ;
-  sleep 3
+  sleep 1
 
   envsubst < ./config/vm-repo-template.service > ./config/vm-repo.service ;
   sudo cp ./config/vm-repo.service /etc/systemd/system ;
