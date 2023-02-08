@@ -2,10 +2,8 @@
 Description=VM Gateway Exposure
 
 [Service]
-Environment=KUBECONFIG=$HOME/.kube/config
-
 ExecStart=${KUBECTL} \
-            --kubeconfig $KUBECONFIG \
+            --kubeconfig $HOME/.kube/config \
             --context active-cluster-m2 \
             port-forward -n istio-system service/vmgateway 8443:8443 --address 0.0.0.0
 
