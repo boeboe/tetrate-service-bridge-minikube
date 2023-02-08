@@ -14,5 +14,5 @@ workload:
   labels:
     app: app-b
     version: v1
-# settings:
-#   connectedOver: INTERNET
+settings:
+  connectedOver: INTERNET
