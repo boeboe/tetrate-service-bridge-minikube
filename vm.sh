@@ -43,7 +43,7 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
   echo "The docker bridge (metallb) ip address of vm gateway is ${VM_GW_IP}"
   echo "However, we will be using kubectl port-forward in a systemd service to make this reachable"
 
-  # Installing systemd service for tsb-gui and vw-gateway exposure
+  # Installing systemd service for tsb-gui, vw-gateway and vm-repo exposure
   export KUBECTL=$(which kubectl)
   envsubst < ./config/tsb-gui-template.service > ./config/tsb-gui.service ;
   sudo cp ./config/tsb-gui.service /etc/systemd/system ;
@@ -56,6 +56,12 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
   if systemctl is-activevm-gateway.service &>/dev/null ; then sudo systemctl stop vm-gateway ; fi
   sudo systemctl enable vm-gateway ;
   sudo systemctl start vm-gateway ;
+
+  envsubst < ./config/vm-repo-template.service > ./config/vm-repo.service ;
+  sudo cp ./config/vm-repo.service /etc/systemd/system ;
+  if systemctl is-activevm-repo.service &>/dev/null ; then sudo systemctl stop vm-repo ; fi
+  sudo systemctl enable vm-repo ;
+  sudo systemctl start vm-repo ;
 
   exit 0
 fi

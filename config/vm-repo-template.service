@@ -1,11 +1,11 @@
 [Unit]
-Description=VM Gateway Exposure
+Description=VM Package Repo Exposure
 
 [Service]
 ExecStart=${KUBECTL} \
             --kubeconfig $HOME/.kube/config \
             --context active-cluster-m2 \
-            port-forward -n istio-system service/vmgateway 15443:15443 --address 0.0.0.0
+            port-forward -n istio-system service/vmgateway 443:443 --address 0.0.0.0
 
 Restart=on-failure
 RestartSec=5s
