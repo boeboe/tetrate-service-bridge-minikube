@@ -44,6 +44,7 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
   echo "However, we will be using kubectl port-forward in a systemd service to make this reachable"
 
   # Installing systemd service for tsb-gui and vw-gateway exposure
+  export KUBECTL=$(which kubectl)
   envsubst < ./config/tsb-gui-template.service > ./config/tsb-gui.service ;
   sudo cp ./config/tsb-gui.service /etc/systemd/system ;
   if systemctl is-active tsb-gui.service &>/dev/null ; then sudo systemctl stop tsb-gui ; fi
