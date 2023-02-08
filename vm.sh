@@ -65,8 +65,6 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
   if systemctl is-active tsb-gui.service &>/dev/null ; then sudo systemctl stop tsb-gui ; fi
   sudo systemctl enable tsb-gui ;
   sudo systemctl start tsb-gui ;
-
-  echo 1
   sleep 3
 
   envsubst < ./config/vm-gateway-template.service > ./config/vm-gateway.service ;
@@ -74,8 +72,6 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
   if systemctl is-active vm-gateway.service &>/dev/null ; then sudo systemctl stop vm-gateway ; fi
   sudo systemctl enable vm-gateway ;
   sudo systemctl start vm-gateway ;
-
-  echo 2
   sleep 3
 
   envsubst < ./config/vm-repo-template.service > ./config/vm-repo.service ;
