@@ -1,0 +1,16 @@
+apiVersion: v1
+data:
+  config: |
+    address-pools:
+    - name: default
+      protocol: layer2
+      addresses:
+      - 192.168.49.200-192.168.49.249
+    - name: vmgateway
+      protocol: layer2
+      addresses:
+      - ${VM_GW_IP}-${VM_GW_IP}
+kind: ConfigMap
+metadata:
+  name: config
+  namespace: metallb-system
