@@ -3,7 +3,7 @@
 ACTIVE_CLUSTER_PROFILE=active-cluster-m2
 ACTIVE_CLUSTER_CONFDIR=./config/active-cluster
 
-VM_ONBOARDING_CERTDIR./certs/vm-onboarding
+VM_ONBOARDING_CERTDIR=./certs/vm-onboarding
 VM_CONFDIR=./config/vm-aws
 VM_K8S_CONFDIR=${VM_CONFDIR}/k8s
 
