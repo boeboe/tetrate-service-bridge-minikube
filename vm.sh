@@ -78,6 +78,7 @@ if [[ ${ACTION} = "on-vm-host" ]]; then
   # Check if VM_GW_IP is set
   if [[ -z "${VM_GW_IP}" ]]; then
     echo "Could not find ENV variable VM_GW_IP, please set this to the IP address of the host running minikube"
+    exit 1
   fi
 
   # Check if we can login to tsb docker registry
