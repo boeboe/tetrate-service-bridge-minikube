@@ -10,3 +10,5 @@ config/standby-cluster/controlplane.yaml
 config/onboarding-agent-sample-jwt-credential-plugin
 config/vm-aws/install-onboarding.sh
 config/vm-aws//onboarding.config.yaml
+config/tsb-gui.service
+config/vm-gateway.service
