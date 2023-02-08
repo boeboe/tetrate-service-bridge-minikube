@@ -25,12 +25,12 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
   fi
 
   # Patch metallb pool so the vmgateway gets an AWS routable ip (host ip)
+  kubectl config use-context ${ACTIVE_CLUSTER_PROFILE} ;
   envsubst < ${ACTIVE_CLUSTER_CONFDIR}/metallb-configmap-patch-template.yaml > ${ACTIVE_CLUSTER_CONFDIR}/metallb-configmap-patch.yaml
   kubectl apply -f ${ACTIVE_CLUSTER_CONFDIR}/metallb-configmap-patch.yaml
   kubectl -n metallb-system rollout restart deploy
 
   # Create secret for vm-onboarding gateway https
-  kubectl config use-context ${ACTIVE_CLUSTER_PROFILE} ;
   if ! kubectl get secret vm-onboarding -n istio-system &>/dev/null ; then
     kubectl create secret tls vm-onboarding -n istio-system \
       --key ${VM_ONBOARDING_CERTDIR}/server.vm-onboarding.tetrate.prod.key \
@@ -52,11 +52,12 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
   done
   echo "DONE"
 
-  echo "Getting vm gateway external ip address"
+  echo "Getting vm gateway external (metallb) ip address"
   while ! VM_GW_IP=$(kubectl get svc -n istio-system vmgateway --output jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null) ; do
     echo -n "."
   done
   echo "DONE"
+  echo "Getting vm gateway external (metallb) ip address: ${VM_GW_IP}"
 
   # Installing systemd service for tsb-gui, vw-gateway and vm-repo exposure
   export KUBECTL=$(which kubectl)
