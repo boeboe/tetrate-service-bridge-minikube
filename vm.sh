@@ -46,7 +46,7 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
   kubectl apply -f ${VM_K8S_CONFDIR} ;
 
   echo "Going to patch metallb pool for vmgateway"
-  while ! $(kubectl annotate svc -n istio-system vmgateway metallb.universe.tf/address-pool=vmgateway --overwrite 2>/dev/null) ; do
+  while ! $(kubectl annotate svc -n istio-system vmgateway metallb.universe.tf/address-pool=vmgateway --overwrite &>/dev/null) ; do
     sleep 2
     echo -n "."
   done
