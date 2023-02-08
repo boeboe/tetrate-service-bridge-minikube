@@ -7,8 +7,7 @@ ExecStart=${KUBECTL} \
             --context active-cluster-m2 \
             port-forward -n istio-system service/vmgateway 15443:15443 --address 0.0.0.0
 
-Restart=on-failure
-RestartSec=5s
+Restart=always
 
 [Install]
 WantedBy=multi-user.target

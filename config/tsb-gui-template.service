@@ -7,8 +7,7 @@ ExecStart=${KUBECTL} \
             --context mgmt-cluster-m1 \
             port-forward -n tsb service/envoy 8443:8443 --address 0.0.0.0
 
-Restart=on-failure
-RestartSec=5s
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
