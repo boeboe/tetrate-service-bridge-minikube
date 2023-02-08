@@ -132,11 +132,11 @@ if [[ ${ACTION} = "on-vm-host" ]]; then
         --zipkin-singlehost-spans ;
   fi
 
-
   # Install istio sidecar, onboarding agent and sample jwt credential plugin
   #   REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/workload_onboarding/quickstart/on-premise/configure-vm#install-istio-sidecar
   #   REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/workload_onboarding/quickstart/on-premise/configure-vm#install-workload-onboarding-agent
   #   REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/workload_onboarding/quickstart/on-premise/configure-vm#install-sample-jwt-credential-plugin
+  echo "Install istio sidecar, onboarding agent and sample jwt credential plugin"
   sudo mkdir -p /var/run/secrets/onboarding-agent-sample-jwt-credential-plugin
   sudo cp ${VM_CONFDIR}/sample-jwt-issuer.jwk /var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/jwt-issuer.jwk
   sudo chmod 400 /var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/jwt-issuer.jwk
@@ -152,11 +152,13 @@ if [[ ${ACTION} = "on-vm-host" ]]; then
 
   # Configure OnboardingConfiguration
   # REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/workload_onboarding/quickstart/on-premise/onboard-vm
+  echo "Configure OnboardingConfiguration"
   cat ${VM_CONFDIR}/onboarding.config-template.yaml | sed s/__TSB_VM_ONBOARDING_ENDPOINT__/${VM_GW_IP}/g > ${VM_CONFDIR}/onboarding.config.yaml ;
   sudo mkdir -p /etc/onboarding-agent
   sudo cp ${VM_CONFDIR}/onboarding.config.yaml /etc/onboarding-agent/onboarding.config.yaml
 
   ### START ONBOARDING AGENT ###
+  echo "Starting/restarting OnboardingConfiguration"
   if systemctl is-active onboarding-agent.service &>/dev/null ; then
     sudo systemctl stop onboarding-agent
   fi
