@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+ACTION=${1}
+
 ACTIVE_CLUSTER_PROFILE=active-cluster-m2
 ACTIVE_CLUSTER_CONFDIR=./config/active-cluster
 
@@ -43,16 +45,16 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
 
   # Installing systemd service for tsb-gui and vw-gateway exposure
   cat ./config/tsb-gui-template.service | sed s/__HOME__/${HOME}/g > ./config/tsb-gui.service ;
-  sudo cp ./config/tsb-gui.service /etc/systemd/system
-  if systemctl is-active tsb-gui.service &>/dev/null ; then sudo systemctl stop tsb-gui fi
-  sudo systemctl enable tsb-gui
-  sudo systemctl start tsb-gui
+  sudo cp ./config/tsb-gui.service /etc/systemd/system ;
+  if systemctl is-active tsb-gui.service &>/dev/null ; then sudo systemctl stop tsb-gui ; fi
+  sudo systemctl enable tsb-gui ;
+  sudo systemctl start tsb-gui ;
 
   cat ./config/vm-gateway-template.service | sed s/__HOME__/${HOME}/g > ./config/vm-gateway.service ;
-  sudo cp ./config/vm-gateway.service /etc/systemd/system
-  if systemctl is-activevm-gateway.service &>/dev/null ; then sudo systemctl stop vm-gateway fi
-  sudo systemctl enable vm-gateway
-  sudo systemctl start vm-gateway
+  sudo cp ./config/vm-gateway.service /etc/systemd/system ;
+  if systemctl is-activevm-gateway.service &>/dev/null ; then sudo systemctl stop vm-gateway ; fi
+  sudo systemctl enable vm-gateway ;
+  sudo systemctl start vm-gateway ;
 
   exit 0
 fi
