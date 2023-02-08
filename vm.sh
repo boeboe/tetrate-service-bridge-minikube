@@ -18,6 +18,17 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
     exit 1
   fi
 
+  # Check if VM_GW_IP is set
+  if [[ -z "${VM_GW_IP}" ]]; then
+    echo "Could not find ENV variable VM_GW_IP, please set this to the IP address of the host running minikube"
+    exit 1
+  fi
+
+  # Patch metallb pool so the vmgateway gets an AWS routable ip (host ip)
+  envsubst < ${ACTIVE_CLUSTER_CONFDIR}/metallb-configmap-patch-template.yaml > ${ACTIVE_CLUSTER_CONFDIR}/metallb-configmap-patch.yaml
+  kubectl apply ${ACTIVE_CLUSTER_CONFDIR}/metallb-configmap-patch.yaml
+  kubectl -n metallb-system rollout restart deploy
+
   # Create secret for vm-onboarding gateway https
   kubectl config use-context ${ACTIVE_CLUSTER_PROFILE} ;
   if ! kubectl get secret vm-onboarding -n istio-system &>/dev/null ; then
@@ -34,14 +45,17 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
   #   REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/workload_onboarding/quickstart/on-premise/configure-workload-onboarding
   kubectl apply -f ${VM_K8S_CONFDIR} ;
 
+  echo "Going to patch metallb pool for vmgateway"
+  while ! kubectl annotate svc -n istio-system vmgateway metallb.universe.tf/address-pool=vmgateway 2>/dev/null) ; do
+    echo -n "."
+  done
+  echo "DONE"
+
   echo "Getting vm gateway external ip address"
   while ! VM_GW_IP=$(kubectl get svc -n istio-system vmgateway --output jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null) ; do
     echo -n "."
   done
   echo "DONE"
-
-  echo "The docker bridge (metallb) ip address of vm gateway is ${VM_GW_IP}"
-  echo "However, we will be using kubectl port-forward in a systemd service to make this reachable"
 
   # Installing systemd service for tsb-gui, vw-gateway and vm-repo exposure
   export KUBECTL=$(which kubectl)
@@ -93,6 +107,12 @@ if [[ ${ACTION} = "on-vm-host" ]]; then
     docker pull containers.dl.tetrate.io/obs-tester-server:1.0 ;
   fi
 
+  # Add /etc/host entries for egress
+  #   REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/workload_onboarding/guides/setup#workload-configuration-egress
+  if ! cat /etc/hosts | grep "The following lines are insterted for istio" &>/dev/null ; then
+    cat ${VM_CONFDIR}/hosts | sudo tee -a /etc/hosts ;
+  fi
+
   # Start app in a container (listen on host network)
   if ! docker ps | grep containers.dl.tetrate.io/obs-tester-server:1.0 &>/dev/null ; then
     docker run -d --restart=always --net=host --name app-b \
@@ -109,11 +129,6 @@ if [[ ${ACTION} = "on-vm-host" ]]; then
         --zipkin-singlehost-spans ;
   fi
 
-  # Add /etc/host entries for egress
-  #   REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/workload_onboarding/guides/setup#workload-configuration-egress
-  if ! cat /etc/hosts | grep "The following lines are insterted for istio" &>/dev/null ; then
-    cat ${VM_CONFDIR}/hosts | sudo tee -a /etc/hosts ;
-  fi
 
   # Install istio sidecar, onboarding agent and sample jwt credential plugin
   #   REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/workload_onboarding/quickstart/on-premise/configure-vm#install-istio-sidecar
