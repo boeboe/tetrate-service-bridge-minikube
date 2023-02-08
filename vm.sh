@@ -44,13 +44,13 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
   echo "However, we will be using kubectl port-forward in a systemd service to make this reachable"
 
   # Installing systemd service for tsb-gui and vw-gateway exposure
-  cat ./config/tsb-gui-template.service | sed s/__HOME__/${HOME}/g > ./config/tsb-gui.service ;
+  envsubst < ./config/tsb-gui-template.service > ./config/tsb-gui.service ;
   sudo cp ./config/tsb-gui.service /etc/systemd/system ;
   if systemctl is-active tsb-gui.service &>/dev/null ; then sudo systemctl stop tsb-gui ; fi
   sudo systemctl enable tsb-gui ;
   sudo systemctl start tsb-gui ;
 
-  cat ./config/vm-gateway-template.service | sed s/__HOME__/${HOME}/g > ./config/vm-gateway.service ;
+  envsubst < ./config/vm-gateway-template.service > ./config/vm-gateway.service ;
   sudo cp ./config/vm-gateway.service /etc/systemd/system ;
   if systemctl is-activevm-gateway.service &>/dev/null ; then sudo systemctl stop vm-gateway ; fi
   sudo systemctl enable vm-gateway ;
