@@ -2,10 +2,8 @@
 Description=TSB GUI Exposure
 
 [Service]
-Environment=KUBECONFIG=${HOME}/.kube/config
-
 ExecStart=${KUBECTL} \
-            --kubeconfig $KUBECONFIG \
+            --kubeconfig ${HOME}/.kube/config \
             --context mgmt-cluster-m1 \
             port-forward -n tsb service/envoy 443:8443 --address 0.0.0.0
 
