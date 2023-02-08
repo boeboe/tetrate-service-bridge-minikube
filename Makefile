@@ -80,6 +80,12 @@ undeploy-app-def-https: ## Undeploy def application (tier1 https)
 undeploy-app-def-mtls: ## Undeploy def application (tier1 mtls)
 	@/bin/sh -c './apps.sh undeploy-app-def mtls'
 
+onboard-app-b-on-minikube: ## Onboarding app-b as a vm workload (minikube part)
+	@/bin/sh -c './vm.sh on-minikube-host'
+
+onboard-app-b-on-vm: ## Onboarding app-b as a vm workload (vm part)
+	@/bin/sh -c './vm.sh on-vm-host'
+
 test-app-abc: ## Generate curl commands to test ABC traffic
 	@/bin/sh -c './apps.sh traffic-cmd-abc'
 
@@ -97,4 +103,7 @@ clean: ## Clean resources
 		./config/standby-cluster/cluster-service-account.jwk \
 		./config/standby-cluster/controlplane-secrets.yaml \
 		./config/standby-cluster/controlplane.yaml \
+		./config/onboarding-agent-sample-jwt-credential-plugin \
+		./config/vm-aws/install-onboarding.sh \
+		./config/vm-aws//onboarding.config.yaml \
 	'

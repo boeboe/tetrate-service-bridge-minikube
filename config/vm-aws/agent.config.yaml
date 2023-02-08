@@ -1,0 +1,24 @@
+apiVersion: config.agent.onboarding.tetrate.io/v1alpha1
+kind: AgentConfiguration
+host:
+  custom:
+    credential:
+    - plugin:
+        name: sample-jwt-credential
+        path: /usr/local/bin/onboarding-agent-sample-jwt-credential-plugin
+        env:
+        - name: SAMPLE_JWT_ISSUER
+          value: "https://issuer-b.tetrate.prod"
+        - name: SAMPLE_JWT_ISSUER_KEY
+          value: "/var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/jwt-issuer.jwk"
+        - name: SAMPLE_JWT_SUBJECT
+          value: "vm-aws.tetrate.prod"
+        - name: SAMPLE_JWT_ATTRIBUTES_FIELD
+          value: "custom_attributes"
+        - name: SAMPLE_JWT_ATTRIBUTES
+          value: "instance_name=vm-aws,instance_role=app-b,region=region1"
+    # hostinfo:
+    #   basic:
+    #     networkInterfaces:
+    #       include:
+    #       - enp0s8

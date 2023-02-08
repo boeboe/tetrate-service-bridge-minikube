@@ -1,0 +1,19 @@
+spec:
+  meshExpansion:
+    onboarding:
+      localRepository: {}
+      endpoint:
+        hosts:
+          - vm-onboarding.tetrate.prod
+        secretName: vm-onboarding
+      workloads:
+        authentication:
+          jwt:
+            issuers:
+            - issuer: https://issuer-b.tetrate.prod
+              shortName: vm-aws
+              tokenFields:
+                attributes:
+                  jsonPath: .custom_attributes
+              jwks: |
+                ${JWKS_VM_AWS}

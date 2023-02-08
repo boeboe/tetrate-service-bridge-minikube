@@ -1,0 +1,16 @@
+[Unit]
+Description=VM Gateway Exposure
+
+[Service]
+Environment=KUBECONFIG=__HOME__/.kube/config
+
+ExecStart=kubectl \
+            --kubeconfig $KUBECONFIG \
+            --context active-cluster-m2 \
+            port-forward -n istio-system service/vmgateway 8443:8443 --address 0.0.0.0
+
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

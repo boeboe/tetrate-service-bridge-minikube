@@ -1,0 +1,19 @@
+spec:
+  meshExpansion:
+    onboarding:
+      localRepository: {}
+      endpoint:
+        hosts:
+          - vm-onboarding.tetrate.prod
+        secretName: vm-onboarding
+      workloads:
+        authentication:
+          jwt:
+            issuers:
+            - issuer: https://issuer-b.tetrate.prod
+              shortName: vm-aws
+              tokenFields:
+                attributes:
+                  jsonPath: .custom_attributes
+              jwks: |
+                {"keys":[{"alg":"RS256","e":"AQAB","kid":"neiILvm23obHMubdMRdf9YT_NZXf9gid42DGwfKGKrg","kty":"RSA","n":"zgk-qyZ1b-OCLZKHliOKUXm4TqymyJ9zibUtlxq8lVl_JV2RdKIHDFLZa74myn0JfyaVYLyOWHS4fHY9JNu-f8X3wSr5zE2T09dRp-CzlT3rdKH4ZXamUt7daxxLE7NxpIbYBYm2Sga-s2sklz1zvUGWkXoU-hKWcaLT0qPAzDwQ-WBflRTFKRJ_RvjmFr5L28Q9VAf_SRX53rIFBzWUahorbJqBVjg2LoOLsOpib5I8XeHIk1Y0MStmx-kD4IN6YWfX4Jbbab-5oPFHulAgol-aIW3JctAnvJFT9tQyBg149R2y2ugynKQaDmIVRBixP0pK1mLKMpmIFGxiiylnYQ","use":"sig"}]}

@@ -7,3 +7,6 @@ config/active-cluster/controlplane.yaml
 config/standby-cluster/cluster-service-account.jwk
 config/standby-cluster/controlplane-secrets.yaml
 config/standby-cluster/controlplane.yaml
+config/onboarding-agent-sample-jwt-credential-plugin
+config/vm-aws/install-onboarding.sh
+config/vm-aws//onboarding.config.yaml

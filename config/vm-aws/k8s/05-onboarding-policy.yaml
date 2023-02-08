@@ -1,0 +1,16 @@
+---
+apiVersion: authorization.onboarding.tetrate.io/v1alpha1
+kind: OnboardingPolicy
+metadata:
+  name: allow-app-b-vms
+  namespace: ns-b
+spec:
+  allow:
+  - workloads:
+    - jwt:
+        issuer: "https://issuer-b.tetrate.prod"
+    onboardTo:
+    - workloadGroupSelector:
+        matchLabels:
+          app: app-b
+          version: v1
