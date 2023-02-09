@@ -143,6 +143,8 @@ if [[ ${ACTION} = "on-vm-host" ]]; then
 
   echo "To watch app-b container logs :"
   echo "  docker logs app-b -f"
+  echo "To watch onboarding-agent and envoy logs:"
+  echo "  journalctl -u onboarding-agent.service -f"
 
   exit 0
 fi
