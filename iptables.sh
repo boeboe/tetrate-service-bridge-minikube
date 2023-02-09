@@ -5,18 +5,17 @@
 # on that host.
 #
 # Args:
-#   (1) PUBLIC_INTF : the public interface of the host
-#   (2) PRIVATE_DOCKER_INTF : the private interface of the docker bridge network
+#   (1) PUBLIC_INTF : the public interface of the host (usually eth0)
 #
+DOCKER_NETWORK=tsb-demo
+DOCKER_NETWORK_ID=$(docker network inspect ${DOCKER_NETWORK} --format '{{.Id}}'  | cut --characters -5)
+DOCKER_INTF=$(ip link show | grep ${DOCKER_NETWORK_ID} | head -n1 | cut -d ':' -f2 | tr -d " ")
 
 PUBLIC_INTF=${1}
-PRIVATE_DOCKER_INTF=${2}
+DOCKER_INTF=${2}
 
 if ! ip addr show dev ${PUBLIC_INTF} ; then
-  echo "Please provide a valid PUBLIC_INTF input parameter as first argument"
-  exit 1
-elif ! ip addr show dev ${PRIVATE_DOCKER_INTF} ; then
-  echo "Please provide a valid PRIVATE_DOCKER_INTF input parameter as second argument"
+  echo "Please provide a valid PUBLIC_INTF input parameter as first argument (usually eth0)"
   exit 1
 fi
 
@@ -33,13 +32,13 @@ iptables -A INPUT -i ${PUBLIC_INTF} -j ACCEPT
 ######################################################################
 
 # ${PUBLIC_INTF} is interface connected to AWS
-# ${PRIVATE_DOCKER_INTF} is interface connected to docker bridged network
+# ${DOCKER_INTF} is interface connected to docker bridged network
 
 # Allow established connections
 iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 # Masquerade.
-iptables -t nat -A POSTROUTING -o ${PRIVATE_DOCKER_INTF} -j MASQUERADE
+iptables -t nat -A POSTROUTING -o ${DOCKER_INTF} -j MASQUERADE
 # fowarding
-iptables -A FORWARD -i ${PRIVATE_DOCKER_INTF} -o ${PUBLIC_INTF} -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i ${DOCKER_INTF} -o ${PUBLIC_INTF} -m state --state RELATED,ESTABLISHED -j ACCEPT
 # Allow outgoing connections from the AWS side.
-iptables -A FORWARD -i ${PUBLIC_INTF} -o ${PRIVATE_DOCKER_INTF} -j ACCEPT
+iptables -A FORWARD -i ${PUBLIC_INTF} -o ${DOCKER_INTF} -j ACCEPT
