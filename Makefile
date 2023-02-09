@@ -26,7 +26,7 @@ endif
 prereqs: ## Make sure prerequisites are satisfied
 	@/bin/sh -c './init.sh ${TSB_VERSION}'
 
-minikube-up: check-credentials ## Bring up and configure minikube clusters
+minikube-up: prereqs check-credentials ## Bring up and configure minikube clusters
 	@/bin/sh -c './minikube.sh up ${K8S_VERSION}'
 
 minikube-down: ## Bring down and delete minikube clusters
