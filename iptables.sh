@@ -12,7 +12,6 @@ DOCKER_NETWORK_ID=$(docker network inspect ${DOCKER_NETWORK} --format '{{.Id}}' 
 DOCKER_INTF=$(ip link show | grep ${DOCKER_NETWORK_ID} | head -n1 | cut -d ':' -f2 | tr -d " ")
 
 PUBLIC_INTF=${1}
-DOCKER_INTF=${2}
 
 if ! ip addr show dev ${PUBLIC_INTF} ; then
   echo "Please provide a valid PUBLIC_INTF input parameter as first argument (usually eth0)"
