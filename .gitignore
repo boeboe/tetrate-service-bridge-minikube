@@ -13,3 +13,6 @@ config/vm-aws//onboarding.config.yaml
 config/tsb-gui.service
 config/vm-gateway.service
 config/vm-repo.service
+
+# AWS Key
+*.pem

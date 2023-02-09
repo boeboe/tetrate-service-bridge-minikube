@@ -3,19 +3,37 @@
 ACTION=${1}
 K8S_VERSION=${2}
 
+# Network configuration
+#   MINIKUBE_NETWORK        : name of the created docker bridge network
+#   AWS_SECONDARY_SUBNET    : secondary aws subnet to be configured in your VPC
+#   MINIKUBE_SUBNET         : minikube subnet (ip addresses for k8s api servers)
+#   METALLB_MGMT_SUBNET     : metallb subnet for k8s service lb ip assignment within mgmt cluster
+#   METALLB_ACTIVE_SUBNET   : metallb subnet for k8s service lb ip assignment within active cluster
+#   METALLB_STANDBY_SUBNET  : metallb subnet for k8s service lb ip assignment within standby cluster
+#
+#   Make sure that
+#     (1) MINIKUBE_SUBNET and METALLB_XYZ_SUBNET do not overlap
+#     (2) MINIKUBE_SUBNET and METALLB_XYZ_SUBNET fall within AWS_SECONDARY_SUBNET
+#   Check https://www.ipaddressguide.com/cidr
+
 MINIKUBE_NETWORK=tsb-demo
+AWS_SECONDARY_SUBNET=172.10.16.0/20     # 172.10.16.0 - 172.10.31.255
+MINIKUBE_SUBNET=172.10.16.0/22          # 172.10.16.0 - 172.10.19.255
+METALLB_MGMT_SUBNET=172.10.20.0/22      # 172.10.20.0 - 172.10.23.255
+METALLB_ACTIVE_SUBNET=172.10.24.0/22    # 172.10.24.0 - 172.10.27.255
+METALLB_STANDBY_SUBNET=172.10.28.0/22   # 172.10.28.0 - 172.10.31.255
 
 MGMT_CLUSTER_PROFILE=mgmt-cluster-m1
-MGMT_CLUSTER_METALLB_STARTIP=100
-MGMT_CLUSTER_METALLB_ENDIP=149
+MGMT_CLUSTER_METALLB_STARTIP=172.10.20.1
+MGMT_CLUSTER_METALLB_ENDIP=172.10.23.254
 
 ACTIVE_CLUSTER_PROFILE=active-cluster-m2
-ACTIVE_CLUSTER_METALLB_STARTIP=150
-ACTIVE_CLUSTER_METALLB_ENDIP=199
+ACTIVE_CLUSTER_METALLB_STARTIP=172.10.24.1
+ACTIVE_CLUSTER_METALLB_ENDIP=172.10.27.254
 
 STANDBY_CLUSTER_PROFILE=standby-cluster-m3
-STANDBY_CLUSTER_METALLB_STARTIP=200
-STANDBY_CLUSTER_METALLB_ENDIP=249
+STANDBY_CLUSTER_METALLB_STARTIP=172.10.28.1
+STANDBY_CLUSTER_METALLB_ENDIP=172.10.31.254
 
 # Configure metallb start and end IP
 #   args:
@@ -36,7 +54,7 @@ function sync_images {
   docker login -u ${TSB_DOCKER_USERNAME} -p ${TSB_DOCKER_PASSWORD} containers.dl.tetrate.io ;
 
   # Sync all tsb images locally (if not yet available)
-  for image in `tctl install image-sync --just-print --raw --accept-eula` ; do
+  for image in `tctl install image-sync --just-print --raw --accept-eula 2>/dev/null` ; do
     if ! docker image inspect ${image} &>/dev/null ; then
       docker pull ${image} ;
     fi
@@ -78,23 +96,31 @@ function load_images {
 }
 
 if [[ ${ACTION} = "up" ]]; then
-  # MINIKUBE_MGMT_CLUSTER_OPTS="--driver kvm --cpus=6 --memory=11g"
-  # MINIKUBE_APP_CLUSTER_OPTS="--driver kvm --cpus=6 --memory=9g"
+  
+  if docker network inspect ${MINIKUBE_NETWORK} | grep ${AWS_SECONDARY_SUBNET} ; then
+    echo "Docker network ${MINIKUBE_NETWORK} matches the expected aws subnet ${AWS_SECONDARY_SUBNET}"
+  else
+    docker network rm ${MINIKUBE_NETWORK} &>/dev/null ;
+    docker network create ${MINIKUBE_NETWORK} --subnet ${AWS_SECONDARY_SUBNET} ;
+
+    if ! docker network inspect ${MINIKUBE_NETWORK} | grep ${AWS_SECONDARY_SUBNET} ; then
+      echo "Failed to create docker network ${MINIKUBE_NETWORK} with subnet ${AWS_SECONDARY_SUBNET}"
+      echo "Check manually what goes wrong"
+      exit 1
+    else
+      echo "Docker network ${MINIKUBE_NETWORK} matches the expected aws subnet ${AWS_SECONDARY_SUBNET}"
+    fi
+  fi
 
   # Start minikube profiles for all clusters
-  minikube start --kubernetes-version=v${K8S_VERSION} --profile ${MGMT_CLUSTER_PROFILE} --network ${MINIKUBE_NETWORK} ${MINIKUBE_MGMT_CLUSTER_OPTS} ;
-  minikube start --kubernetes-version=v${K8S_VERSION} --profile ${ACTIVE_CLUSTER_PROFILE} --network ${MINIKUBE_NETWORK} ${MINIKUBE_APP_CLUSTER_OPTS} ;
-  minikube start --kubernetes-version=v${K8S_VERSION} --profile ${STANDBY_CLUSTER_PROFILE} --network ${MINIKUBE_NETWORK} ${MINIKUBE_APP_CLUSTER_OPTS} ;
-
-  # Extract the docker/minikube network subnet (default 192.168.49.0/24)
-  # If another docker/minikube subnet pre-existed, it will be a different subnet
-  # MINIKUBE_NETWORK_SUBNET=$(docker network inspect ${MINIKUBE_NETWORK} | jq -r .[].IPAM.Config[0].Subnet | awk -F '.' '{ print $1"."$2"."$3".";}')
-  MINIKUBE_NETWORK_SUBNET=$(minikube ip --profile ${MGMT_CLUSTER_PROFILE} | awk -F '.' '{ print $1"."$2"."$3".";}')
+  minikube start --kubernetes-version=v${K8S_VERSION} --profile ${MGMT_CLUSTER_PROFILE} --network ${MINIKUBE_NETWORK} --subnet ${MINIKUBE_SUBNET} ;
+  minikube start --kubernetes-version=v${K8S_VERSION} --profile ${ACTIVE_CLUSTER_PROFILE} --network ${MINIKUBE_NETWORK} --subnet ${MINIKUBE_SUBNET} ;
+  minikube start --kubernetes-version=v${K8S_VERSION} --profile ${STANDBY_CLUSTER_PROFILE} --network ${MINIKUBE_NETWORK} --subnet ${MINIKUBE_SUBNET} ;
 
   # Configure and enable metallb in all clusters
-  configure_metallb ${MGMT_CLUSTER_PROFILE} ${MINIKUBE_NETWORK_SUBNET}${MGMT_CLUSTER_METALLB_STARTIP} ${MINIKUBE_NETWORK_SUBNET}${MGMT_CLUSTER_METALLB_ENDIP} ;
-  configure_metallb ${ACTIVE_CLUSTER_PROFILE} ${MINIKUBE_NETWORK_SUBNET}${ACTIVE_CLUSTER_METALLB_STARTIP} ${MINIKUBE_NETWORK_SUBNET}${ACTIVE_CLUSTER_METALLB_ENDIP} ;
-  configure_metallb ${STANDBY_CLUSTER_PROFILE} ${MINIKUBE_NETWORK_SUBNET}${STANDBY_CLUSTER_METALLB_STARTIP} ${MINIKUBE_NETWORK_SUBNET}${STANDBY_CLUSTER_METALLB_ENDIP} ;
+  configure_metallb ${MGMT_CLUSTER_PROFILE} ${MGMT_CLUSTER_METALLB_STARTIP} ${MGMT_CLUSTER_METALLB_ENDIP} ;
+  configure_metallb ${ACTIVE_CLUSTER_PROFILE} ${ACTIVE_CLUSTER_METALLB_STARTIP} ${ACTIVE_CLUSTER_METALLB_ENDIP} ;
+  configure_metallb ${STANDBY_CLUSTER_PROFILE} ${STANDBY_CLUSTER_METALLB_STARTIP} ${STANDBY_CLUSTER_METALLB_ENDIP} ;
 
   minikube --profile ${MGMT_CLUSTER_PROFILE} addons enable metallb ;
   minikube --profile ${ACTIVE_CLUSTER_PROFILE} addons enable metallb ;
