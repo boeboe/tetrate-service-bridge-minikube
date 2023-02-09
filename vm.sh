@@ -127,6 +127,23 @@ if [[ ${ACTION} = "on-vm-host" ]]; then
   sudo systemctl enable onboarding-agent
   sudo systemctl start onboarding-agent
 
+  # $ sudo netstat -anp | grep envoy
+  # tcp        0      0 127.0.0.1:15000         0.0.0.0:*               LISTEN      10183/envoy
+  # tcp        0      0 172.10.0.203:8000       0.0.0.0:*               LISTEN      10183/envoy
+  # tcp        0      0 127.0.0.2:9411          0.0.0.0:*               LISTEN      10183/envoy
+  # tcp        0      0 0.0.0.0:15021           0.0.0.0:*               LISTEN      10183/envoy
+  # tcp        0      0 127.0.0.2:80            0.0.0.0:*               LISTEN      10183/envoy
+  # tcp        0      0 0.0.0.0:15090           0.0.0.0:*               LISTEN      10183/envoy
+  # tcp        0      0 172.10.0.203:41256      172.10.20.4:15443       ESTABLISHED 10183/envoy
+
+  sleep 5
+  echo "Envoy should be listening on your incoming ip:8000 and 127.0.0.2:9411 and 127.0.0.2:80 :"
+  echo "  sudo netstat -anp | grep envoy"
+  sudo netstat -anp | grep envoy
+
+  echo "To watch app-b container logs :"
+  echo "  docker logs app-b -f"
+
   exit 0
 fi
 
