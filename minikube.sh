@@ -119,7 +119,7 @@ if [[ ${ACTION} = "up" ]]; then
   MGMT_MINIKUBE_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${MGMT_PROFILE})
   ACTIVE_MINIKUBE_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${ACTIVE_PROFILE})
   STANDBY_MINIKUBE_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${STANDBY_PROFILE})
-  exit
+  
 
   if ! route -n | grep $(echo ${MGMT_METALLB_SUBNET} | sed "s|/.*||") | grep ${MGMT_MINIKUBE_IP} } | grep ${DOCKER_INTF} &>/dev/null ; then
     sudo -E ip route add ${MGMT_METALLB_SUBNET} via ${MGMT_MINIKUBE_IP} dev ${DOCKER_INTF}
@@ -132,6 +132,8 @@ if [[ ${ACTION} = "up" ]]; then
   if ! route -n | grep $(echo ${STANDBY_METALLB_SUBNET} | sed "s|/.*||") | grep ${STANDBY_MINIKUBE_IP} } | grep ${DOCKER_INTF} &>/dev/null ; then
     sudo -E ip route add ${STANDBY_METALLB_SUBNET} via ${STANDBY_MINIKUBE_IP} dev ${DOCKER_INTF}
   fi
+
+  exit
 
   # Configure and enable metallb in all clusters
   configure_metallb ${MGMT_PROFILE} ${MGMT_METALLB_STARTIP} ${MGMT_METALLB_ENDIP} ;
