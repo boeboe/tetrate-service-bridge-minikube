@@ -23,10 +23,13 @@ ifeq ($(TSB_DOCKER_PASSWORD),)
 	$(error environment variable TSB_DOCKER_PASSWORD is undefined)
 endif
 
-prereqs: ## Make sure prerequisites are satisfied
-	@/bin/sh -c './init.sh ${TSB_VERSION}'
+prereqs-main: ## Make sure prerequisites are satisfied on main host
+	@/bin/sh -c './prereqs.sh check-main-deps ${TSB_VERSION}'
 
-minikube-up: prereqs check-credentials ## Bring up and configure minikube clusters
+prereqs-vm: ## Make sure prerequisites are satisfied on vm host
+	@/bin/sh -c './prereqs.sh check-vm-deps'
+
+minikube-up: prereqs-main check-credentials ## Bring up and configure minikube clusters
 	@/bin/sh -c './minikube.sh up ${K8S_VERSION}'
 
 minikube-down: ## Bring down and delete minikube clusters
@@ -83,7 +86,7 @@ undeploy-app-def-mtls: ## Undeploy def application (tier1 mtls)
 onboard-app-b-on-minikube: ## Onboarding app-b as a vm workload (minikube part)
 	@/bin/sh -c './vm.sh on-minikube-host'
 
-onboard-app-b-on-vm: ## Onboarding app-b as a vm workload (vm part)
+onboard-app-b-on-vm: prereqs-vm ## Onboarding app-b as a vm workload (vm part)
 	@/bin/sh -c './vm.sh on-vm-host'
 
 test-app-abc: ## Generate curl commands to test ABC traffic
