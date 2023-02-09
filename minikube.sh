@@ -112,12 +112,14 @@ if [[ ${ACTION} = "up" ]]; then
     minikube start --kubernetes-version=v${K8S_VERSION} --profile ${STANDBY_PROFILE} --network ${DOCKER_NETWORK} ;
   fi
 
+  set -x
   # Configure network routing for metallb ranges to minikube
   DOCKER_NETWORK_ID=$(docker network inspect ${DOCKER_NETWORK} --format '{{.Id}}'  | cut --characters -5)
   DOCKER_INTF=$(ip link show | grep ${DOCKER_NETWORK_ID} | head -n1 | cut -d ':' -f2 | tr -d " ")
   MGMT_MINIKUBE_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${MGMT_PROFILE})
   ACTIVE_MINIKUBE_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${ACTIVE_PROFILE})
   STANDBY_MINIKUBE_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${STANDBY_PROFILE})
+  exit
 
   if ! route -n | grep $(echo ${MGMT_METALLB_SUBNET} | sed "s|/.*||") | grep ${MGMT_MINIKUBE_IP} } | grep ${DOCKER_INTF} &>/dev/null ; then
     sudo -E ip route add ${MGMT_METALLB_SUBNET} via ${MGMT_MINIKUBE_IP} dev ${DOCKER_INTF}
