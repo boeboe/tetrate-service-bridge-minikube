@@ -18,12 +18,6 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
     exit 1
   fi
 
-  # Check if VM_GW_IP is set
-  if [[ -z "${VM_GW_IP}" ]]; then
-    echo "Could not find ENV variable VM_GW_IP, please set this to the IP address of the host running minikube"
-    exit 1
-  fi
-
   # Patch metallb pool so the vmgateway gets an AWS routable ip (host ip)
   kubectl config use-context ${ACTIVE_CLUSTER_PROFILE} ;
   envsubst < ${ACTIVE_CLUSTER_CONFDIR}/metallb-configmap-patch-template.yaml > ${ACTIVE_CLUSTER_CONFDIR}/metallb-configmap-patch.yaml
@@ -45,19 +39,13 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
   #   REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/workload_onboarding/quickstart/on-premise/configure-workload-onboarding
   kubectl apply -f ${VM_K8S_CONFDIR} ;
 
-  echo "Going to patch metallb pool for vmgateway"
-  while ! $(kubectl annotate svc -n istio-system vmgateway metallb.universe.tf/address-pool=vmgateway --overwrite &>/dev/null) ; do
-    sleep 2
-    echo -n "."
-  done
-  echo "DONE"
 
   echo "Getting vm gateway external (metallb) ip address"
   while ! VM_GW_IP=$(kubectl get svc -n istio-system vmgateway --output jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null) ; do
     echo -n "."
   done
   echo "DONE"
-  echo "Getting vm gateway external (metallb) ip address: ${VM_GW_IP}"
+  echo "VM gateway external (metallb) ip address: ${VM_GW_IP}"
 
   # Installing systemd service for tsb-gui, vw-gateway and vm-repo exposure
   export KUBECTL=$(which kubectl)
@@ -67,19 +55,6 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
   sudo systemctl enable tsb-gui ;
   sudo systemctl start tsb-gui ;
   sleep 1
-
-  envsubst < ./config/vm-gateway-template.service > ./config/vm-gateway.service ;
-  sudo cp ./config/vm-gateway.service /etc/systemd/system ;
-  if systemctl is-active vm-gateway.service &>/dev/null ; then sudo systemctl stop vm-gateway 2>/dev/null && sudo systemctl daemon-reload ; fi
-  sudo systemctl enable vm-gateway ;
-  sudo systemctl start vm-gateway ;
-  sleep 1
-
-  envsubst < ./config/vm-repo-template.service > ./config/vm-repo.service ;
-  sudo cp ./config/vm-repo.service /etc/systemd/system ;
-  if systemctl is-active vm-repo.service &>/dev/null ; then sudo systemctl stop vm-repo 2>/dev/null && sudo systemctl daemon-reload ; fi
-  sudo systemctl enable vm-repo ;
-  sudo systemctl start vm-repo ;
 
   exit 0
 fi
