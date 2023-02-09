@@ -42,13 +42,6 @@ if [[ ${ACTION} = "check-vm-deps" ]]; then
     fi
   done
 
-  # check if the expected tctl version is installed
-  if ! [[ "$(tctl version --local-only)" =~ "${TSB_VERSION}" ]]
-  then
-    echo "wrong version of tctl, please install version ${TSB_VERSION} first" ;
-    exit 2
-  fi
-
   exit 0
 fi
 

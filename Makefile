@@ -86,7 +86,7 @@ undeploy-app-def-mtls: ## Undeploy def application (tier1 mtls)
 onboard-app-b-on-minikube: ## Onboarding app-b as a vm workload (minikube part)
 	@/bin/sh -c './vm.sh on-minikube-host'
 
-onboard-app-b-on-vm: prereqs-vm ## Onboarding app-b as a vm workload (vm part)
+onboard-app-b-on-vm: prereqs-vm  check-credentials ## Onboarding app-b as a vm workload (vm part)
 	@/bin/sh -c './vm.sh on-vm-host'
 
 test-app-abc: ## Generate curl commands to test ABC traffic
