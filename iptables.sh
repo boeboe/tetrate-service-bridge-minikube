@@ -18,7 +18,7 @@ if ! ip addr show dev ${PUBLIC_INTF} ; then
 elif ! ip addr show dev ${PRIVATE_DOCKER_INTF} ; then
   echo "Please provide a valid PRIVATE_DOCKER_INTF input parameter as second argument"
   exit 1
-elif
+fi
 
 # Always accept loopback traffic
 iptables -A INPUT -i lo -j ACCEPT
