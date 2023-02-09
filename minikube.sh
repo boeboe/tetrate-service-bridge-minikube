@@ -96,9 +96,21 @@ function load_images {
 if [[ ${ACTION} = "up" ]]; then
 
   # Start minikube profiles for all clusters
-  minikube start --kubernetes-version=v${K8S_VERSION} --profile ${MGMT_PROFILE} --network ${DOCKER_NETWORK} ;
-  minikube start --kubernetes-version=v${K8S_VERSION} --profile ${ACTIVE_PROFILE} --network ${DOCKER_NETWORK} ;
-  minikube start --kubernetes-version=v${K8S_VERSION} --profile ${STANDBY_PROFILE} --network ${DOCKER_NETWORK} ;
+  if minikube profile list | grep ${MGMT_PROFILE} | grep "Running" &>/dev/null ; then
+    echo "Minikube cluster profile ${MGMT_PROFILE} already running"
+  else
+    minikube start --kubernetes-version=v${K8S_VERSION} --profile ${MGMT_PROFILE} --network ${DOCKER_NETWORK} ;
+  fi
+  if minikube profile list | grep ${ACTIVE_PROFILE} | grep "Running" &>/dev/null ; then
+    echo "Minikube cluster profile ${ACTIVE_PROFILE} already running"
+  else
+    minikube start --kubernetes-version=v${K8S_VERSION} --profile ${ACTIVE_PROFILE} --network ${DOCKER_NETWORK} ;
+  fi
+  if minikube profile list | grep ${STANDBY_PROFILE} | grep "Running" &>/dev/null ; then
+    echo "Minikube cluster profile ${STANDBY_PROFILE} already running"
+  else
+    minikube start --kubernetes-version=v${K8S_VERSION} --profile ${STANDBY_PROFILE} --network ${DOCKER_NETWORK} ;
+  fi
 
   # Configure network routing for metallb ranges to minikube
   DOCKER_NETWORK_ID=$(docker network inspect ${} --format '{{.Id}}'  | cut --characters -5)
