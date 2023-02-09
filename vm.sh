@@ -18,12 +18,6 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
     exit 1
   fi
 
-  # Patch metallb pool so the vmgateway gets an AWS routable ip (host ip)
-  kubectl config use-context ${ACTIVE_CLUSTER_PROFILE} ;
-  envsubst < ${ACTIVE_CLUSTER_CONFDIR}/metallb-configmap-patch-template.yaml > ${ACTIVE_CLUSTER_CONFDIR}/metallb-configmap-patch.yaml
-  kubectl apply -f ${ACTIVE_CLUSTER_CONFDIR}/metallb-configmap-patch.yaml
-  kubectl -n metallb-system rollout restart deploy
-
   # Create secret for vm-onboarding gateway https
   if ! kubectl get secret vm-onboarding -n istio-system &>/dev/null ; then
     kubectl create secret tls vm-onboarding -n istio-system \
