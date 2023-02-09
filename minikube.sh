@@ -4,7 +4,7 @@ ACTION=${1}
 K8S_VERSION=${2}
 
 # Network configuration
-#   DOCKER_NETWORK        : name of the created docker bridge network
+#   DOCKER_NETWORK          : name of the created docker bridge network
 #   AWS_SECONDARY_SUBNET    : secondary aws subnet to be configured in your VPC
 #   METALLB_MGMT_SUBNET     : metallb subnet for k8s service lb ip assignment within mgmt cluster
 #   METALLB_ACTIVE_SUBNET   : metallb subnet for k8s service lb ip assignment within active cluster
@@ -17,9 +17,9 @@ K8S_VERSION=${2}
 
 DOCKER_NETWORK=tsb-demo
 AWS_SECONDARY_SUBNET=172.10.16.0/20     # 172.10.16.0 - 172.10.31.255
-MGMT_METALLB_SUBNET=172.10.16.0/22          # 172.10.16.0 - 172.10.19.255
-ACTIVE_METALLB_SUBNET=172.10.20.0/22      # 172.10.20.0 - 172.10.23.255
-STANDBY_METALLB_SUBNET=172.10.24.0/22    # 172.10.24.0 - 172.10.27.255
+MGMT_METALLB_SUBNET=172.10.16.0/22      # 172.10.16.0 - 172.10.19.255
+ACTIVE_METALLB_SUBNET=172.10.20.0/22    # 172.10.20.0 - 172.10.23.255
+STANDBY_METALLB_SUBNET=172.10.24.0/22   # 172.10.24.0 - 172.10.27.255
 
 MGMT_PROFILE=mgmt-cluster-m1
 MGMT_METALLB_STARTIP=172.10.16.1
