@@ -2,8 +2,8 @@
 
 ACTION=${1}
 
-ACTIVE_CLUSTER_PROFILE=active-cluster-m2
-ACTIVE_CLUSTER_CONFDIR=./config/active-cluster
+ACTIVE_PROFILE=active-cluster-m2
+ACTIVE_CONFDIR=./config/active-cluster
 
 VM_ONBOARDING_CERTDIR=./certs/vm-onboarding
 VM_CONFDIR=./config/vm-aws
@@ -19,6 +19,7 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
   fi
 
   # Create secret for vm-onboarding gateway https
+  kubectl config use-context ${ACTIVE_PROFILE} ;
   if ! kubectl get secret vm-onboarding -n istio-system &>/dev/null ; then
     kubectl create secret tls vm-onboarding -n istio-system \
       --key ${VM_ONBOARDING_CERTDIR}/server.vm-onboarding.tetrate.prod.key \
@@ -27,7 +28,7 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
 
   # Apply vm onboarding patch to create a VM gateway and allow jwt based onboarding
   #   REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/workload_onboarding/quickstart/on-premise/configure-workload-onboarding#allow-workloads-to-authenticate-themselves-by-means-of-a-jwt-token
-  kubectl -n istio-system patch controlplanes controlplane --patch-file ${ACTIVE_CLUSTER_CONFDIR}/onboarding-vm-patch.yaml --type merge ;
+  kubectl -n istio-system patch controlplanes controlplane --patch-file ${ACTIVE_CONFDIR}/onboarding-vm-patch.yaml --type merge ;
 
   # Create WorkloadGroup, Sidecar and OnboardingPolicy for app
   #   REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/workload_onboarding/quickstart/on-premise/configure-workload-onboarding
