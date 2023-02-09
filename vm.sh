@@ -47,15 +47,6 @@ if [[ ${ACTION} = "on-minikube-host" ]]; then
   echo "DONE"
   echo "VM gateway external (metallb) ip address: ${VM_GW_IP}"
 
-  # Installing systemd service for tsb-gui, vw-gateway and vm-repo exposure
-  export KUBECTL=$(which kubectl)
-  envsubst < ./config/tsb-gui-template.service > ./config/tsb-gui.service ;
-  sudo cp ./config/tsb-gui.service /etc/systemd/system ;
-  if systemctl is-active tsb-gui.service &>/dev/null ; then sudo systemctl stop tsb-gui 2>/dev/null && sudo systemctl daemon-reload ; fi
-  sudo systemctl enable tsb-gui ;
-  sudo systemctl start tsb-gui ;
-  sleep 1
-
   exit 0
 fi
 

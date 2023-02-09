@@ -215,6 +215,17 @@ if [[ ${ACTION} = "config-tsb" ]]; then
 
   # Namespace for T1 Gateways
   kubectl apply -f ./config/mgmt-cluster/k8s/01-namespaces.yaml ;
+
+  # Installing systemd service for tsb-gui
+  export KUBECTL=$(which kubectl)
+  envsubst < ./config/tsb-gui-template.service > ./config/tsb-gui.service ;
+  sudo cp ./config/tsb-gui.service /etc/systemd/system ;
+  if systemctl is-active tsb-gui.service &>/dev/null ; then sudo systemctl stop tsb-gui 2>/dev/null && sudo systemctl daemon-reload ; fi
+  sudo systemctl enable tsb-gui ;
+  sudo systemctl start tsb-gui ;
+  sleep 1
+
+  echo "The tsb gui should be available at https://$(curl -s ifconfig.me):8443"
   exit 0
 fi
 
