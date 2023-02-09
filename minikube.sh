@@ -73,7 +73,7 @@ function sync_images {
 #   args:
 #     (1) minikube profile name
 function load_images {
-  for image in `tctl install image-sync --just-print --raw --accept-eula` ; do
+  for image in `tctl install image-sync --just-print --raw --accept-eula 2>/dev/null` ; do
     if ! minikube --profile ${1} image ls | grep ${image} &>/dev/null ; then
       echo "Syncing image ${image} to minikube profile ${1}" ;
       minikube --profile ${1} image load ${image} ;
