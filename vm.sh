@@ -102,15 +102,14 @@ if [[ ${ACTION} = "on-vm-host" ]]; then
   sudo mkdir -p /var/run/secrets/onboarding-agent-sample-jwt-credential-plugin
   sudo cp ${VM_CONFDIR}/sample-jwt-issuer.jwk /var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/jwt-issuer.jwk
   sudo chmod 400 /var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/jwt-issuer.jwk
-  sudo chown onboarding-agent: -R /var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/
 
   sudo mkdir -p /etc/onboarding-agent
   sudo cp ${VM_CONFDIR}/agent.config.yaml /etc/onboarding-agent/agent.config.yaml
 
   cat ${VM_CONFDIR}/install-onboarding-template.sh | sed s/__TSB_VM_ONBOARDING_ENDPOINT__/${VM_GW_IP}/g > ${VM_CONFDIR}/install-onboarding.sh ;
   chmod +x ${VM_CONFDIR}/install-onboarding.sh
-  sudo ${VM_CONFDIR}/install-onboarding.sh
-  sudo chown onboarding-agent: -R /var/run/secrets/onboarding-agent-sample-jwt-credential-plugin/
+  sudo . ${VM_CONFDIR}/install-onboarding.sh
+  sudo chown onboarding-agent: -R /var/run/secrets/onboarding-agent-sample-jwt-credential-plugin
 
   # Configure OnboardingConfiguration
   # REF: https://docs.tetrate.io/service-bridge/1.6.x/en-us/setup/workload_onboarding/quickstart/on-premise/onboard-vm
