@@ -26,6 +26,7 @@ kubectl get validatingwebhookconfigurations -o custom-columns=:metadata.name | x
 kubectl get clusterrole -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tsb\|xcp" | xargs -I {} kubectl delete clusterrole {} --timeout=10s --wait=false
 kubectl get clusterrolebinding -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tsb\|xcp" | xargs -I {} kubectl delete clusterrolebinding {} --timeout=10s --wait=false
 kubectl get crds -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tetrate" | xargs -I {} kubectl patch crd {} --type json --patch='[ { "op": "remove", "path": "/metadata/finalizers" } ]'
+kubectl get crds -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tetrate" | xargs -I {} kubectl delete crd {} --timeout=10s --wait=false
 
 # Clean up pending finalizer namespaces
 kubectl proxy &
