@@ -55,18 +55,27 @@ DONE
 function remove_tsb {
   kubectl config use-context ${1} ;
 
+  # Put operators to sleep
+  for NS in tsb istio-system istio-gateway xcp-multicluster cert-manager ; do
+    kubectl get deployments -n ${NS} -o custom-columns=:metadata.name \
+      | grep operator | xargs -I {} kubectl scale deployment {} -n ${NS} --replicas=0 ; 
+  done
+
+  sleep 5 ;
+
   # Clean up namespace specific resources
   for NS in tsb istio-system istio-gateway xcp-multicluster cert-manager ; do
     kubectl get deployments -n ${NS} -o custom-columns=:metadata.name \
-      | grep operator | xargs -I {} kubectl scale deployment {} -n ${NS} --replicas=0 ;
-    kubectl get deployments -n ${NS} -o custom-columns=:metadata.name \
       | grep operator | xargs -I {} kubectl delete deployment {} -n ${NS} --timeout=10s --wait=false ;
+    sleep 5 ;
     kubectl delete --all deployments -n ${NS} --timeout=10s --wait=false ;
     kubectl delete --all jobs -n ${NS} --timeout=10s --wait=false ;
     kubectl delete --all statefulset -n ${NS} --timeout=10s --wait=false ;
     kubectl get deployments -n ${NS} -o custom-columns=:metadata.name \
       | grep operator | xargs -I {} kubectl patch deployment {} -n ${NS} --type json \
       --patch='[ { "op": "remove", "path": "/metadata/finalizers" } ]' ;
+    kubectl delete --all deployments -n ${NS} --timeout=10s --wait=false ;
+    sleep 5 ;
     kubectl delete namespace ${NS} --timeout=10s --wait=false ;
   done 
 
@@ -81,8 +90,14 @@ function remove_tsb {
     | xargs -I {} kubectl delete clusterrole {} --timeout=10s --wait=false ;
   kubectl get clusterrolebinding -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tsb\|xcp" \
     | xargs -I {} kubectl delete clusterrolebinding {} --timeout=10s --wait=false ;
+
+  # Cleanup custom resource definitions
+  kubectl get crds -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tetrate" \
+    | xargs -I {} kubectl delete crd {} --timeout=10s --wait=false ;
+  sleep 5 ;
   kubectl get crds -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tetrate" \
     | xargs -I {} kubectl patch crd {} --type json --patch='[ { "op": "remove", "path": "/metadata/finalizers" } ]' ;
+  sleep 5 ;
   kubectl get crds -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tetrate" \
     | xargs -I {} kubectl delete crd {} --timeout=10s --wait=false ;
 
@@ -302,6 +317,7 @@ if [[ ${ACTION} = "remove-tsb" ]]; then
   remove_tsb ${STANDBY_CLUSTER_PROFILE} ;
   remove_tsb ${ACTIVE_CLUSTER_PROFILE} ;
   remove_tsb ${MGMT_CLUSTER_PROFILE} ;
+  sleep 10 ;
 
   exit 0
 fi
