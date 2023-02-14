@@ -49,6 +49,56 @@ function login_tsb_admin {
 DONE
 }
 
+# Remove tsb installation
+#   args:
+#     (1) cluster profile (kubernetes context)
+function remove_tsb {
+  kubectl config use-context ${1} ;
+
+  # Clean up namespace specific resources
+  for NS in tsb istio-system istio-gateway xcp-multicluster cert-manager ; do
+    kubectl get deployments -n ${NS} -o custom-columns=:metadata.name \
+      | grep operator | xargs -I {} kubectl scale deployment {} -n ${NS} --replicas=0 ;
+    kubectl get deployments -n ${NS} -o custom-columns=:metadata.name \
+      | grep operator | xargs -I {} kubectl delete deployment {} -n ${NS} --timeout=10s --wait=false ;
+    kubectl delete --all deployments -n ${NS} --timeout=10s --wait=false ;
+    kubectl delete --all jobs -n ${NS} --timeout=10s --wait=false ;
+    kubectl delete --all statefulset -n ${NS} --timeout=10s --wait=false ;
+    kubectl get deployments -n ${NS} -o custom-columns=:metadata.name \
+      | grep operator | xargs -I {} kubectl patch deployment {} -n ${NS} --type json \
+      --patch='[ { "op": "remove", "path": "/metadata/finalizers" } ]' ;
+    kubectl delete namespace ${NS} --timeout=10s --wait=false ;
+  done 
+
+  # Clean up cluster wide resources
+  kubectl get mutatingwebhookconfigurations -o custom-columns=:metadata.name \
+    | xargs -I {} kubectl delete mutatingwebhookconfigurations {}  --timeout=10s --wait=false ;
+  kubectl get crds -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tetrate" \
+    | xargs -I {} kubectl delete crd {} --timeout=10s --wait=false ;
+  kubectl get validatingwebhookconfigurations -o custom-columns=:metadata.name \
+    | xargs -I {} kubectl delete validatingwebhookconfigurations {} --timeout=10s --wait=false ;
+  kubectl get clusterrole -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tsb\|xcp" \
+    | xargs -I {} kubectl delete clusterrole {} --timeout=10s --wait=false ;
+  kubectl get clusterrolebinding -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tsb\|xcp" \
+    | xargs -I {} kubectl delete clusterrolebinding {} --timeout=10s --wait=false ;
+  kubectl get crds -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tetrate" \
+    | xargs -I {} kubectl patch crd {} --type json --patch='[ { "op": "remove", "path": "/metadata/finalizers" } ]' ;
+  kubectl get crds -o custom-columns=:metadata.name | grep "cert-manager\|istio\|tetrate" \
+    | xargs -I {} kubectl delete crd {} --timeout=10s --wait=false ;
+
+  # Clean up pending finalizer namespaces
+  kubectl proxy &
+  PID_KP=$!
+  sleep 5
+  for NS in tsb istio-system istio-gateway xcp-multicluster cert-manager ; do
+    curl -k -H "Content-Type: application/json" -X PUT \
+      -d "{ \"apiVersion\": \"v1\", \"kind\": \"Namespace\", \"metadata\": { \"name\": \"${NS}\" }, \"spec\": { \"finalizers\": [] } }" \
+      http://127.0.0.1:8001/api/v1/namespaces/${NS}/finalize ;
+  done
+  kill ${PID_KP} ;
+
+}
+
 if [[ ${ACTION} = "install-mgmt-plane" ]]; then
 
   kubectl config use-context ${MGMT_CLUSTER_PROFILE} ;
@@ -67,12 +117,12 @@ if [[ ${ACTION} = "install-mgmt-plane" ]]; then
   tctl install demo --registry containers.dl.tetrate.io --admin-password admin ;
 
   # Wait for the management, control and data plane to become available
-  kubectl wait deployment -n tsb tsb-operator-management-plane --for condition=Available=True --timeout=600s
-  kubectl wait deployment -n istio-system tsb-operator-control-plane --for condition=Available=True --timeout=600s
-  kubectl wait deployment -n istio-gateway tsb-operator-data-plane --for condition=Available=True --timeout=600s
+  kubectl wait deployment -n tsb tsb-operator-management-plane --for condition=Available=True --timeout=600s ;
+  kubectl wait deployment -n istio-system tsb-operator-control-plane --for condition=Available=True --timeout=600s ;
+  kubectl wait deployment -n istio-gateway tsb-operator-data-plane --for condition=Available=True --timeout=600s ;
   while ! kubectl get deployment -n istio-system edge &>/dev/null; do sleep 1; done ;
-  kubectl wait deployment -n istio-system edge --for condition=Available=True --timeout=600s
-  kubectl get pods -A
+  kubectl wait deployment -n istio-system edge --for condition=Available=True --timeout=600s ;
+  kubectl get pods -A ;
       
   exit 0
 fi
@@ -175,27 +225,27 @@ if [[ ${ACTION} = "onboard-app-clusters" ]]; then
   ###############
   # Apply AOP patch for more real time update in the UI (Apache SkyWalking demo tweak)
   kubectl config use-context ${MGMT_CLUSTER_PROFILE} ;
-  kubectl -n tsb patch managementplanes managementplane --patch-file ./config/oap-deploy-patch.yaml --type merge
-  kubectl -n istio-system patch controlplanes controlplane --patch-file ./config/oap-deploy-patch.yaml --type merge
+  kubectl -n tsb patch managementplanes managementplane --patch-file ./config/oap-deploy-patch.yaml --type merge ;
+  kubectl -n istio-system patch controlplanes controlplane --patch-file ./config/oap-deploy-patch.yaml --type merge ;
   kubectl config use-context ${ACTIVE_CLUSTER_PROFILE} ;
-  kubectl -n istio-system patch controlplanes controlplane --patch-file ./config/oap-deploy-patch.yaml --type merge
+  kubectl -n istio-system patch controlplanes controlplane --patch-file ./config/oap-deploy-patch.yaml --type merge ;
   kubectl config use-context ${STANDBY_CLUSTER_PROFILE} ;
-  kubectl -n istio-system patch controlplanes controlplane --patch-file ./config/oap-deploy-patch.yaml --type merge
+  kubectl -n istio-system patch controlplanes controlplane --patch-file ./config/oap-deploy-patch.yaml --type merge ;
 
   # Wait for the control and data plane to become available
   kubectl config use-context ${ACTIVE_CLUSTER_PROFILE} ;
-  kubectl wait deployment -n istio-system tsb-operator-control-plane --for condition=Available=True --timeout=600s
-  kubectl wait deployment -n istio-gateway tsb-operator-data-plane --for condition=Available=True --timeout=600s
+  kubectl wait deployment -n istio-system tsb-operator-control-plane --for condition=Available=True --timeout=600s ;
+  kubectl wait deployment -n istio-gateway tsb-operator-data-plane --for condition=Available=True --timeout=600s ;
   while ! kubectl get deployment -n istio-system edge &>/dev/null; do sleep 1; done ;
-  kubectl wait deployment -n istio-system edge --for condition=Available=True --timeout=600s
-  kubectl get pods -A
+  kubectl wait deployment -n istio-system edge --for condition=Available=True --timeout=600s ;
+  kubectl get pods -A ;
 
   kubectl config use-context ${STANDBY_CLUSTER_PROFILE} ;
-  kubectl wait deployment -n istio-system tsb-operator-control-plane --for condition=Available=True --timeout=600s
-  kubectl wait deployment -n istio-gateway tsb-operator-data-plane --for condition=Available=True --timeout=600s
+  kubectl wait deployment -n istio-system tsb-operator-control-plane --for condition=Available=True --timeout=600s ;
+  kubectl wait deployment -n istio-gateway tsb-operator-data-plane --for condition=Available=True --timeout=600s ;
   while ! kubectl get deployment -n istio-system edge &>/dev/null; do sleep 1; done ;
-  kubectl wait deployment -n istio-system edge --for condition=Available=True --timeout=600s
-  kubectl get pods -A
+  kubectl wait deployment -n istio-system edge --for condition=Available=True --timeout=600s ;
+  kubectl get pods -A ;
 
   exit 0
 fi
@@ -235,14 +285,23 @@ if [[ ${ACTION} = "reset-tsb" ]]; then
   # Login again as tsb admin in case of a session time-out
   login_tsb_admin tetrate ;
 
-  kubectl config use-context ${MGMT_CLUSTER_PROFILE} ;
-
   # Remove all TSB configuration objects
   tctl get all --org tetrate --tenant prod | tctl delete -f - ;
 
-  # Remove all TSB kubernetes installation objects
-  kubectl get -A egressgateways.install.tetrate.io,ingressgateways.install.tetrate.io,tier1gateways.install.tetrate.io -o yaml \
-   | kubectl delete -f - ;
+  # Remove all TSB kubernetes installation objects for gateways
+  kubectl config use-context ${MGMT_CLUSTER_PROFILE} ;
+  kubectl get crds -o custom-columns=:metadata.name | grep "gateways.install.tetrate.io" | xargs -I {} kubectl delete {} ;
+
+  exit 0
+fi
+
+
+if [[ ${ACTION} = "remove-tsb" ]]; then
+
+  # Remove tsb completely from the 3 clusters
+  remove_tsb ${STANDBY_CLUSTER_PROFILE} ;
+  remove_tsb ${ACTIVE_CLUSTER_PROFILE} ;
+  remove_tsb ${MGMT_CLUSTER_PROFILE} ;
 
   exit 0
 fi
@@ -253,4 +312,5 @@ echo "  - install-mgmt-plane"
 echo "  - onboard-app-clusters"
 echo "  - config-tsb"
 echo "  - reset-tsb"
+echo "  - remove-tsb"
 exit 1

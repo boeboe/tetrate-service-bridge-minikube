@@ -47,6 +47,9 @@ config-tsb: ## Configure TSB
 reset-tsb: ## Reset all TSB configuration
 	@/bin/sh -c './tsb.sh reset-tsb'
 
+remove-tsb: ## Remove all TSB installations
+	@/bin/sh -c './tsb.sh remove-tsb'
+
 deploy-app-abc-http: ## Deploy abc application (tier1 http)
 	@/bin/sh -c './apps.sh deploy-app-abc http'
 
